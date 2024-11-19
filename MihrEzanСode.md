@@ -2,19 +2,19 @@
 
 Структура кода:
 
-mihr_ezan/
-│
-├── main.py
-│
-├── logic/
-│   └── time_handler.py
-│
-├── ui/
-│   ├── portrait_clock.py
-│   └── landscape_clock.py
-│
-└── fonts/
-    └── DSEG7Classic-Bold.ttf
+mihr_ezan/  
+│  
+├── main.py  
+│  
+├── logic/  
+│   └── time_handler.py  
+│  
+├── ui/  
+│   ├── portrait_clock.py  
+│   └── landscape_clock.py  
+│  
+└── fonts/  
+    └── DSEG7Classic-Bold.ttf  
 
 ----------------------
 
