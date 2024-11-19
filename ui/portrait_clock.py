@@ -16,14 +16,15 @@ class PortraitClockLayout(FloatLayout):
         self.clock_label = PortraitClockLabel()
         self.add_widget(self.clock_label)
         
-        # Создаем кнопку настроек
+        # Создаем увеличенную кнопку настроек
         self.settings_button = Button(
-            text="S",  # Заменяем на более надежный символ
+            text="SETTINGS",  # Изменили текст
             size_hint=(None, None),
-            size=(40, 40),
-            background_color=(0.2, 0.2, 0.2, 1),  # Немного светлее фона
-            pos_hint={'center_x': 0.5, 'y': 0.02},
-            color=(0.9, 0.9, 0.9, 1)  # Светло-серый цвет текста
+            size=(120, 50),  # Увеличили размер кнопки
+            background_color=(0.2, 0.2, 0.2, 1),
+            pos_hint={'center_x': 0.5, 'y': 0.05},  # Немного подняли кнопку
+            color=(0.9, 0.9, 0.9, 1),
+            font_size='16sp'  # Добавили размер шрифта
         )
         self.settings_button.bind(on_release=self.show_settings)
         self.add_widget(self.settings_button)
