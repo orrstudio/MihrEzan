@@ -41,6 +41,8 @@ Those wishing to contribute to the development of the project, please contact or
 
 ## **Скриншоты (Screenshots):**
 
+![v0 1L](https://github.com/user-attachments/assets/9a0ccee9-e3f5-4a8b-92a7-1aa8d5ce8a38)
+![v0 1P](https://github.com/user-attachments/assets/775ded55-97b0-45c2-85e0-0313f2002615)
 
 # Цифровые часы с динамическим масштабированием шрифта
 
