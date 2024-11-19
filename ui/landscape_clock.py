@@ -1,3 +1,4 @@
+# ui/landscape_clock.py
 from kivy.uix.label import Label
 from kivy.core.window import Window
 from logic.time_handler import TimeHandler
