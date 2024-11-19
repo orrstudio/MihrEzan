@@ -4,15 +4,20 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
-from kivy.graphics import Color, Line
+from kivy.graphics import Color, Line, Rectangle
 from data.database import SettingsDatabase
 
 class SettingsWindow(ModalView):
     def __init__(self, apply_callback, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (0.9, 0.9)
-        # Делаем фон окна настроек значительно светлее основного
-        self.background_color = (0.25, 0.25, 0.25, 1)
+        
+        # Устанавливаем цвет фона через canvas
+        with self.canvas.before:
+            Color(0.25, 0.25, 0.25, 1)  # Светло-серый цвет
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self._update_rect, size=self._update_rect)
+        
         self.apply_callback = apply_callback
         self.db = SettingsDatabase()
         
@@ -108,6 +113,10 @@ class SettingsWindow(ModalView):
         self.layout.add_widget(spacer)
         
         self.add_widget(self.layout)
+    
+    def _update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
     
     def on_accept(self, instance):
         """Обработка нажатия кнопки принять"""
