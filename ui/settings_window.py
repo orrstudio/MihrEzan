@@ -116,7 +116,7 @@ class SettingsWindow(ModalView):
         
         self.color_spinner = Spinner(
             text=self.db.get_setting('color'),
-            values=('Лайм', 'Красный', 'Оранжевый', 'Аква', 'Голд', 'Серый', 'Белый'),
+            values=('Lime', 'Aqua', 'Blue', 'Red', 'Yellow', 'Magenta', 'Pink', 'Grey', 'White'),
             size_hint_y=None,
             height=dp(50),
             background_color=(0.2, 0.2, 0.2, 1),
@@ -159,12 +159,14 @@ class SettingsWindow(ModalView):
     def get_color_tuple(color_name):
         """Преобразование названия цвета в RGB"""
         colors = {
-            'Лайм': (0, 1, 0, 1),
-            'Красный': (1, 0, 0, 1),
-            'Оранжевый': (1, 0.65, 0, 1),
-            'Аква': (0, 1, 1, 1),
-            'Голд': (1, 0.84, 0, 1),
-            'Серый': (0.7, 0.7, 0.7, 1),
-            'Белый': (1, 1, 1, 1)
+            'Lime': (0, 1, 0, 1),
+            'Aqua': (0, 1, 1, 1),
+            'Blue': (0, 0, 1, 1),
+            'Red': (1, 0, 0, 1),
+            'Yellow': (1, 1, 0, 1),
+            'Magenta': (1, 0, 1, 1),
+            'Pink': (1, 0.75, 0.8, 1),
+            'Grey': (0.7, 0.7, 0.7, 1),
+            'White': (1, 1, 1, 1)
         }
-        return colors.get(color_name, (0, 1, 0, 1))  # По умолчанию возвращаем лаймовый цвет
+        return colors.get(color_name, (0, 1, 0, 1))  # По умолчанию возвращаем Lime
