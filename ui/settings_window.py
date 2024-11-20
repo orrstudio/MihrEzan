@@ -65,6 +65,7 @@ class SettingsWindow(ModalView):
             color=(1, 1, 1, 1),
             font_size=sp(20)
         )
+        accept_button.background_normal_color = accept_button.background_color
         
         cancel_button = Button(
             text="✕",
@@ -74,6 +75,7 @@ class SettingsWindow(ModalView):
             color=(1, 1, 1, 1),
             font_size=sp(20)
         )
+        cancel_button.background_normal_color = cancel_button.background_color
         
         # Добавляем эффекты при нажатии
         for btn in [accept_button, cancel_button]:
@@ -141,13 +143,26 @@ class SettingsWindow(ModalView):
         self.rect.size = instance.size
     
     def button_pressed(self, instance):
-        # Анимация нажатия кнопки
-        anim = Animation(size=(dp(35), dp(35)), duration=0.1)
+        # Анимация нажатия: уменьшение размера + затемнение цвета
+        anim = Animation(
+            size=(dp(35), dp(35)), 
+            background_color=(
+                instance.background_color[0] * 0.8,
+                instance.background_color[1] * 0.8,
+                instance.background_color[2] * 0.8,
+                1
+            ),
+            duration=0.1
+        )
         anim.start(instance)
     
     def button_released(self, instance):
-        # Анимация отпускания кнопки
-        anim = Animation(size=(dp(40), dp(40)), duration=0.1)
+        # Анимация отпускания: возврат размера + цвета
+        anim = Animation(
+            size=(dp(40), dp(40)),
+            background_color=instance.background_normal_color,
+            duration=0.1
+        )
         anim.start(instance)
     
     def on_accept(self, *args):
