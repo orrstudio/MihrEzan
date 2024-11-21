@@ -1,5 +1,6 @@
 from kivy.uix.modalview import ModalView
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
@@ -8,10 +9,88 @@ from kivy.graphics import Color, Line, Rectangle
 from kivy.metrics import dp, sp
 from kivy.core.window import Window
 from kivy.animation import Animation
+from kivy.uix.scrollview import ScrollView
 from data.database import SettingsDatabase
 
+class ColorButton(Button):
+    """Кнопка выбора цвета"""
+    def __init__(self, color_name, color_tuple, **kwargs):
+        super().__init__(**kwargs)
+        self.color_name = color_name
+        self.color_tuple = color_tuple
+        self.background_color = color_tuple
+        self.background_normal = ''
+        self.size_hint = (1, None)
+        self.height = self.width  # Квадратная кнопка
+        
+    def on_size(self, *args):
+        self.height = self.width  # Поддерживаем квадратную форму при изменении размера
+
+class SettingsCard(BoxLayout):
+    """Карточка для группы настроек"""
+    def __init__(self, title="", **kwargs):
+        super().__init__(**kwargs)
+        self.orientation = 'vertical'
+        self.size_hint_y = None
+        self.height = dp(200)  # Начальная высота
+        self.padding = [dp(10), dp(5)]
+        self.spacing = dp(10)
+        
+        # Фон карточки
+        with self.canvas.before:
+            Color(0.2, 0.2, 0.2, 1)
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self._update_rect, size=self._update_rect)
+        
+        # Заголовок секции
+        if title:
+            title_label = Label(
+                text=title.upper(),
+                color=(1, 1, 1, 0.8),
+                font_size=sp(16),
+                size_hint_y=None,
+                height=dp(30),
+                halign='left'
+            )
+            title_label.bind(size=title_label.setter('text_size'))
+            self.add_widget(title_label)
+            
+    def _update_rect(self, instance, value):
+        """Обновляет позицию и размер фонового прямоугольника"""
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
+
+class SettingsSection(ScrollView):
+    """Секция настроек"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint_y = None
+        self.height = dp(500)  # Будет обновляться динамически
+        
+        # Фон секции
+        with self.canvas.before:
+            Color(0.15, 0.15, 0.15, 0.95)
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self._update_rect, size=self._update_rect)
+        
+        # Основной layout с адаптивными отступами
+        self.layout = BoxLayout(
+            orientation='vertical', 
+            spacing=dp(15),
+            padding=[dp(20), dp(10), dp(20), dp(20)],
+            pos_hint={'center_x': 0.5, 'center_y': 0.5},
+            size_hint_y=None
+        )
+        self.layout.bind(minimum_height=self.layout.setter('height'))
+        
+        self.add_widget(self.layout)
+    
+    def _update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
+
 class SettingsWindow(ModalView):
-    def __init__(self, apply_callback, **kwargs):
+    def __init__(self, db, main_window, apply_callback, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (None, None)
         # Адаптивный размер окна
@@ -27,14 +106,18 @@ class SettingsWindow(ModalView):
             self.rect = Rectangle(pos=self.pos, size=self.size)
         self.bind(pos=self._update_rect, size=self._update_rect)
         
+        self.db = db
+        self.main_window = main_window  # Сохраняем ссылку на главное окно
         self.apply_callback = apply_callback
-        self.db = SettingsDatabase()
+        self.colors_visible = False  # Флаг видимости сетки цветов
+        self.selected_color = None  # Временное хранение выбранного цвета
+        self.initial_color = self.db.get_setting('color')  # Сохраняем начальный цвет
         
-        # Основной layout с адаптивными отступами
+        # Основной layout
         self.layout = BoxLayout(
             orientation='vertical', 
             spacing=dp(15),
-            padding=[dp(20), dp(10), dp(20), dp(20)],
+            size_hint_y=1,
             pos_hint={'center_x': 0.5, 'center_y': 0.5}
         )
         
@@ -63,62 +146,113 @@ class SettingsWindow(ModalView):
         
         self.layout.add_widget(title_layout)
 
-        # Основное содержимое
-        content_layout = BoxLayout(
-            orientation='vertical',
-            spacing=dp(20),
-            size_hint_y=1,
-            padding=[dp(20), dp(20)]  # Добавляем отступы
-        )
+        # Основная секция с настройками
+        self.settings_section = SettingsSection()
         
-        # Создаем спиннер для выбора цвета
+        # Карточка с настройками цвета
+        color_card = SettingsCard(title="Appearance")
+        
+        # Создаем кнопку выбора цвета
         current_color = self.db.get_setting('color')
         color_tuple = self.get_color_tuple(current_color)
         
-        self.color_spinner = Spinner(
+        self.color_button = Button(
             text=f"Color: {current_color}",
-            values=[f"Color: {color}" for color in ['Lime', 'Aqua', 'Blue', 'Red', 'Yellow', 'Magenta', 'Pink', 'Grey', 'White']],
             size_hint_y=None,
             height=dp(50),
-            background_color=(*color_tuple[:3], 0.8),
-            color=(1, 1, 1, 1),
+            background_color=color_tuple,
+            background_normal = '',
+            color=(0, 0, 0, 1) if current_color == 'Lime' else (0, 0, 0, 1) if sum(color_tuple[:3]) > 1.5 else (1, 1, 1, 1),  # Черный текст для лайма и светлых цветов
             font_size=sp(16)
         )
-        self.color_spinner.bind(text=self._on_color_select)
+        self.color_button.bind(on_release=self.toggle_color_grid)
+        color_card.add_widget(self.color_button)
+
+        # Контейнер для сетки цветов
+        self.colors_container = BoxLayout(
+            orientation='vertical',
+            size_hint_y=None,
+            opacity=0  # Изначально прозрачный
+        )
         
-        # Добавляем спиннер в начало content_layout
-        content_layout.add_widget(self.color_spinner)
+        # Сетка для цветных кнопок
+        self.colors_grid = GridLayout(
+            cols=3,
+            spacing=dp(10),
+            size_hint_y=None,
+            padding=[dp(5), dp(5)]
+        )
         
-        # Добавляем растягивающийся виджет, чтобы заполнить пространство
-        content_layout.add_widget(Widget())
+        # Список цветов
+        colors = {
+            'Lime': (0, 1, 0, 1),
+            'Aqua': (0, 1, 1, 1),
+            'Blue': (0, 0, 1, 1),
+            'Red': (1, 0, 0, 1),
+            'Yellow': (1, 1, 0, 1),
+            'Magenta': (1, 0, 1, 1),
+            'Pink': (1, 0.75, 0.8, 1),
+            'Grey': (0.7, 0.7, 0.7, 1),
+            'White': (1, 1, 1, 1)
+        }
         
-        self.layout.add_widget(content_layout)
+        # Создаем кнопки для каждого цвета
+        button_size = (Window.width - dp(100)) / 3  # Размер кнопки (с учетом отступов)
+        grid_height = button_size * 3 + dp(30)  # Высота сетки (3 ряда кнопок + отступы)
+        self.colors_grid.height = grid_height
+        self.colors_container.height = grid_height  # Устанавливаем фиксированную высоту
+        
+        for color_name, color_tuple in colors.items():
+            color_button = ColorButton(
+                color_name=color_name,
+                color_tuple=color_tuple,
+                size_hint=(None, None),
+                width=button_size,
+                height=button_size,
+                color=(0, 0, 0, 1) if color_name == 'Lime' else (1, 1, 1, 1) if sum(color_tuple[:3]) > 1.5 else (0, 0, 0, 1)  # Черный текст для лайма и светлых цветов
+            )
+            color_button.bind(on_release=self._on_color_button_press)
+            self.colors_grid.add_widget(color_button)
+        
+        self.colors_container.add_widget(self.colors_grid)
+        color_card.add_widget(self.colors_container)
+        color_card.bind(minimum_height=color_card.setter('height'))
+        
+        # Добавляем карточку в секцию
+        self.settings_section.layout.add_widget(color_card)
+        
+        # Добавляем секцию в основной layout
+        self.layout.add_widget(self.settings_section)
         
         # Нижняя панель с кнопками
         bottom_panel = BoxLayout(
             orientation='horizontal',
             size_hint_y=None,
-            height=dp(50),
+            height=dp(60),
             spacing=dp(10),
-            padding=[dp(10), 0]
+            padding=[dp(10), dp(5)]
         )
         
-        # Кнопки управления
+        # Кнопки управления с увеличенной высотой
+        button_style = {
+            'size_hint_x': 0.5,
+            'color': (1, 1, 1, 1),
+            'font_size': sp(16),
+            'height': dp(50),
+            'size_hint_y': None
+        }
+        
         cancel_button = Button(
             text="Cancel",
             background_color=(0.8, 0.2, 0.2, 1),
-            size_hint_x=0.5,
-            color=(1, 1, 1, 1),
-            font_size=sp(16)
+            **button_style
         )
         cancel_button.background_normal_color = cancel_button.background_color
         
         accept_button = Button(
             text="Save",
             background_color=(0.2, 0.8, 0.2, 1),
-            size_hint_x=0.5,
-            color=(1, 1, 1, 1),
-            font_size=sp(16)
+            **button_style
         )
         accept_button.background_normal_color = accept_button.background_color
         
@@ -150,12 +284,32 @@ class SettingsWindow(ModalView):
         self.title_rect.pos = instance.pos
         self.title_rect.size = instance.size
     
-    def _on_color_select(self, instance, value):
-        """Обработка выбора цвета"""
-        color_name = value.replace("Color: ", "")
-        color_tuple = self.get_color_tuple(color_name)
-        instance.background_color = (*color_tuple[:3], 0.8)
-    
+    def toggle_color_grid(self, instance):
+        """Показать/скрыть сетку цветов"""
+        target_opacity = 1 if not self.colors_visible else 0
+        
+        anim = Animation(
+            opacity=target_opacity,
+            duration=0.3
+        )
+        anim.start(self.colors_container)
+        self.colors_visible = not self.colors_visible
+
+    def _on_color_button_press(self, button):
+        """Обработка нажатия на цветную кнопку"""
+        # Обновляем основную кнопку
+        self.color_button.text = f"Color: {button.color_name}"
+        self.color_button.background_normal = ''
+        self.color_button.background_color = button.color_tuple
+        # Для лайма всегда используем черный текст
+        self.color_button.color = (0, 0, 0, 1) if button.color_name == 'Lime' else (0, 0, 0, 1) if sum(button.color_tuple[:3]) > 1.5 else (1, 1, 1, 1)
+        
+        # Сохраняем выбранный цвет временно
+        self.selected_color = button.color_name
+        
+        # Скрываем сетку цветов
+        self.toggle_color_grid(None)
+
     def button_pressed(self, instance):
         # Анимация нажатия: затемнение цвета
         anim = Animation(
@@ -178,11 +332,20 @@ class SettingsWindow(ModalView):
         anim.start(instance)
     
     def on_accept(self, *args):
-        color_name = self.color_spinner.text.replace("Color: ", "")
-        self.db.save_setting('color', color_name)
-        self.apply_callback(self.get_color_tuple(color_name))
+        """Сохраняем настройки при нажатии кнопки Save"""
+        if self.selected_color:
+            self.db.save_setting('color', self.selected_color)
+            if hasattr(self.main_window, 'update_color'):
+                self.main_window.update_color(self.selected_color)
         self.dismiss()
 
+    def dismiss(self, *args):
+        """При отмене возвращаем исходный цвет"""
+        if not self.selected_color or args:  # args будут не пусты при явном вызове dismiss
+            if hasattr(self.main_window, 'update_color') and self.initial_color:
+                self.main_window.update_color(self.initial_color)
+        super().dismiss()
+    
     @staticmethod
     def get_color_tuple(color_name):
         """Преобразование названия цвета в RGB"""
