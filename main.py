@@ -64,16 +64,32 @@ class ClockApp(App):
         self.switch_orientation(new_orientation)
     
     def switch_orientation(self, new_orientation):
-        """Плавное переключение между ориентациями"""
-        # Создаем новый виджет
+        """
+        Плавное переключение между портретной и ландшафтной ориентациями.
+        
+        Args:
+            new_orientation (str): Новая ориентация ('landscape' или 'portrait')
+            
+        Реализует:
+        1. Создание нового виджета для выбранной ориентации
+        2. Передачу текущих настроек цвета
+        3. Плавную анимацию перехода между виджетами
+        """
+        # Создаем новый виджет в соответствии с ориентацией
         new_widget = LandscapeClockLabel() if new_orientation == 'landscape' else PortraitClockLayout()
         new_widget.opacity = 0
         
-        # Добавляем новый виджет
+        # Добавляем новый виджет в layout
         self.layout.add_widget(new_widget)
         
-        # Если есть предыдущий виджет, делаем плавный переход
+        # Если есть предыдущий виджет, выполняем плавный переход
         if hasattr(self, 'clock_widget'):
+            # Передаем цвет от старого виджета к новому
+            if hasattr(self.clock_widget, 'clock_label'):
+                new_widget.color = self.clock_widget.clock_label.color
+            else:
+                new_widget.color = self.clock_widget.color
+                
             # Анимация затухания старого виджета
             anim_old = Animation(opacity=0, duration=0.15)
             
