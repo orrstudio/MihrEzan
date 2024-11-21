@@ -58,22 +58,22 @@ class SettingsWindow(ModalView):
         
         # Стилизованные кнопки
         accept_button = Button(
-            text="✓",
+            text="Save",
             background_color=(0.2, 0.8, 0.2, 1),
             size_hint=(None, None),
-            size=(dp(40), dp(40)),
+            size=(dp(80), dp(40)),
             color=(1, 1, 1, 1),
-            font_size=sp(20)
+            font_size=sp(16)
         )
         accept_button.background_normal_color = accept_button.background_color
         
         cancel_button = Button(
-            text="✕",
+            text="Cancel",
             background_color=(0.8, 0.2, 0.2, 1),
             size_hint=(None, None),
-            size=(dp(40), dp(40)),
+            size=(dp(80), dp(40)),
             color=(1, 1, 1, 1),
-            font_size=sp(20)
+            font_size=sp(16)
         )
         cancel_button.background_normal_color = cancel_button.background_color
         
@@ -145,7 +145,7 @@ class SettingsWindow(ModalView):
     def button_pressed(self, instance):
         # Анимация нажатия: уменьшение размера + затемнение цвета
         anim = Animation(
-            size=(dp(35), dp(35)), 
+            size=(dp(75), dp(35)), 
             background_color=(
                 instance.background_color[0] * 0.8,
                 instance.background_color[1] * 0.8,
@@ -159,7 +159,7 @@ class SettingsWindow(ModalView):
     def button_released(self, instance):
         # Анимация отпускания: возврат размера + цвета
         anim = Animation(
-            size=(dp(40), dp(40)),
+            size=(dp(80), dp(40)),
             background_color=instance.background_normal_color,
             duration=0.1
         )
