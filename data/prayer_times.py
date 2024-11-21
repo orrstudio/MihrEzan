@@ -16,23 +16,39 @@ logger = logging.getLogger(__name__)
 
 # Полные названия времен молитв для портретной ориентации
 PRAYER_NAMES_PORTRAIT = {
-    'Fajr': 'Sübh',
+    'Midnight': 'Təhəccüd',
+    'Fajr': 'İmsak',
     'Sunrise': 'Günəş',
-    'Dhuhr': 'Zöhr',
-    'Asr': 'Əsr',
-    'Maghrib': 'Məğrib',
-    'Isha': 'İşa'
+    'Dhuhr': 'Günorta',
+    'Asr': 'İkindi',
+    'Maghrib': 'Axşam',
+    'Isha': 'Gecə'
 }
 
-# Сокращенные названия для ландшафтной ориентации
-PRAYER_NAMES_LANDSCAPE = {
-    'Fajr': 'Sb',
-    'Sunrise': 'Gn',
-    'Dhuhr': 'Zh',
-    'Asr': 'Əs',
-    'Maghrib': 'Mg',
-    'Isha': 'İş'
+# Названия молитв для ландшафтной ориентации (Азербайджанский)
+PRAYER_NAMES_LANDSCAPE_AZ = {
+    'Midnight': 'THCD',
+    'Fajr': 'İMSK',
+    'Sunrise': 'GNƏŞ',
+    'Dhuhr': 'GÜNO',
+    'Asr': 'İKND',
+    'Maghrib': 'AXŞM',
+    'Isha': 'GECƏ'
 }
+
+# Названия молитв для ландшафтной ориентации (Английский)
+PRAYER_NAMES_LANDSCAPE_EN = {
+    'Midnight': 'MDNT',
+    'Fajr': 'FAJR',
+    'Sunrise': 'SUNR',
+    'Dhuhr': 'DUHR',
+    'Asr': 'ASR',
+    'Maghrib': 'MGRB',
+    'Isha': 'ISHA'
+}
+
+# Для обратной совместимости
+PRAYER_NAMES_LANDSCAPE = PRAYER_NAMES_LANDSCAPE_AZ
 
 class PrayerTimesAPI:
     """
