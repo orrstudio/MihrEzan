@@ -24,3 +24,6 @@ buildozer-*.log
 # IDE files
 .idea/
 .vscode/
+
+# Task management
+TODO.md
