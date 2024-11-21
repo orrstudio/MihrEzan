@@ -25,5 +25,8 @@ buildozer-*.log
 .idea/
 .vscode/
 
-# Task management
+# User settings and data
 TODO.md
+*.db
+settings.db
+data/*.db
