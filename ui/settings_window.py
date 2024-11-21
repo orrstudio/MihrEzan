@@ -47,7 +47,7 @@ class SettingsWindow(ModalView):
         
         # Заголовок с адаптивным размером шрифта
         title_label = Label(
-            text="Настройки",
+            text="Settings",
             color=(1, 1, 1, 1),
             size_hint_x=0.7,
             halign='left',
@@ -107,7 +107,7 @@ class SettingsWindow(ModalView):
         )
         
         color_label = Label(
-            text="Цвет часов",
+            text="Clock Color",
             color=(1, 1, 1, 0.9),
             size_hint_y=None,
             height=dp(30),
