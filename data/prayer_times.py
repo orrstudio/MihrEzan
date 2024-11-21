@@ -14,10 +14,9 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Названия молитв для портретной ориентации
+# Полные названия времен молитв для портретной ориентации
 PRAYER_NAMES_PORTRAIT = {
-    'Midnight': 'Gecə yarısı',
-    'Fajr': 'Fəcr',
+    'Fajr': 'Sübh',
     'Sunrise': 'Günəş',
     'Dhuhr': 'Zöhr',
     'Asr': 'Əsr',
@@ -25,15 +24,14 @@ PRAYER_NAMES_PORTRAIT = {
     'Isha': 'İşa'
 }
 
-# Названия молитв для ландшафтной ориентации
+# Сокращенные названия для ландшафтной ориентации
 PRAYER_NAMES_LANDSCAPE = {
-    'Midnight': 'TCGD',
-    'Fajr': 'İMSK',
-    'Sunrise': 'GNƏŞ',
-    'Dhuhr': 'GÜNO',
-    'Asr': 'İKND',
-    'Maghrib': 'AXŞM',
-    'Isha': 'GECƏ'
+    'Fajr': 'Sb',
+    'Sunrise': 'Gn',
+    'Dhuhr': 'Zh',
+    'Asr': 'Əs',
+    'Maghrib': 'Mg',
+    'Isha': 'İş'
 }
 
 class PrayerTimesAPI:
