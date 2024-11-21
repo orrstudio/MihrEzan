@@ -14,7 +14,7 @@ venvMihrEzan/
 build.log
 build-*.log
 build/
-build-*/
+build-*
 
 # Temporary files
 # buildozer.spec
@@ -24,6 +24,14 @@ buildozer-*.log
 # IDE files
 .idea/
 .vscode/
+.windsurf/
+*.windsurf
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
 
 # User settings and data
 TODO.md
