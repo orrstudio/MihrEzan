@@ -38,3 +38,6 @@ TODO.md
 *.db
 settings.db
 data/*.db
+
+# Documentation and planning
+ui/portrait_layout_plan.md

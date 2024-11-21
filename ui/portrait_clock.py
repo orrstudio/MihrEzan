@@ -35,7 +35,7 @@ class PortraitClockLayout(FloatLayout):
     
     def show_settings(self, instance):
         """Показать окно настроек"""
-        settings_window = SettingsWindow(self.apply_settings)
+        settings_window = SettingsWindow(self.db, self, self.apply_settings)
         settings_window.open()
     
     def apply_settings(self, color):
