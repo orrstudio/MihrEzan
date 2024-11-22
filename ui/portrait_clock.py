@@ -5,6 +5,7 @@ from kivy.core.window import Window
 from ui.base_clock import BaseClockLabel
 from ui.settings_window import SettingsWindow
 from data.database import SettingsDatabase
+from ui.date_labels import GregorianDateLabel, HijriDateLabel
 
 class PortraitClockLayout(FloatLayout):
     def __init__(self, **kwargs):
@@ -14,6 +15,14 @@ class PortraitClockLayout(FloatLayout):
         # Создаем метку времени
         self.clock_label = PortraitClockLabel()
         self.add_widget(self.clock_label)
+        
+        # Добавляем григорианскую дату
+        self.gregorian_date = GregorianDateLabel()
+        self.add_widget(self.gregorian_date)
+        
+        # Добавляем дату хиджры
+        self.hijri_date = HijriDateLabel()
+        self.add_widget(self.hijri_date)
         
         # Создаем увеличенную кнопку настроек
         self.settings_button = Button(

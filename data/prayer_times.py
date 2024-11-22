@@ -95,10 +95,19 @@ class PrayerTimesAPI:
             }
             
             logger.info(f"Fetching prayer times for {date} from Aladhan API")
-            response = requests.get(f"{self.BASE_URL}/timingsByCity", params=params)
+            logger.debug(f"API Parameters: {params}")
+            
+            response = requests.get(f"{self.BASE_URL}/timingsByCity", params=params, timeout=10)
             response.raise_for_status()
             
             data = response.json()
+            logger.info("API Response Data:")
+            logger.info(json.dumps(data, indent=2))
+            
+            # Проверяем успешность запроса
+            if data.get('code') != 200:
+                logger.error(f"API returned error code: {data.get('code')}, status: {data.get('status')}")
+                return None
             
             # Проверяем наличие всех необходимых данных
             if not data.get('data'):
@@ -116,10 +125,10 @@ class PrayerTimesAPI:
             
             return data
             
-        except requests.RequestException as e:
-            logger.error(f"Error fetching prayer times: {e}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"API request failed: {e}")
             return None
-        except (KeyError, ValueError) as e:
+        except (ValueError, KeyError) as e:
             logger.error(f"Error parsing API response: {e}")
             return None
             
@@ -264,7 +273,7 @@ class PrayerTimesDB:
             row = cursor.fetchone()
             
             if row:
-                return {
+                data = {
                     'date': row[0],
                     'gregorian': json.loads(row[1]),
                     'hijri': json.loads(row[2]),
@@ -283,6 +292,9 @@ class PrayerTimesDB:
                     },
                     'timestamp': row[12]
                 }
+                logger.info(f"Database data for {date}:")
+                logger.info(json.dumps(data, indent=2))
+                return data
             
             return None
     
@@ -369,72 +381,61 @@ class PrayerTimesManager:
     def __init__(self, city="Baku", country="Azerbaijan", method=13):
         self.api = PrayerTimesAPI(city, country, method)
         self.db = PrayerTimesDB()
-    
-    def get_prayer_times(self, date=None, force_update=False):
-        """
-        Получает времена молитв, при необходимости обновляя кэш.
+        self._current_date = None
         
-        Args:
-            date (str, optional): Дата в формате YYYY-MM-DD. По умолчанию - сегодня.
-            force_update (bool): Принудительное обновление кэша
-            
-        Returns:
-            dict: Времена молитв
+    def get_prayer_times(self, date=None):
+        """
+        Получает времена молитв для указанной даты.
+        Сначала проверяет базу данных, если данных нет - запрашивает из API.
         """
         if date is None:
             date = datetime.now().strftime('%Y-%m-%d')
+            
+        logger.info(f"Getting prayer times for date: {date}")
         
-        # Проверяем кэш
-        if not force_update and self.db.is_cache_valid(date):
-            cached_data = self.db.get_prayer_times(date)
-            if cached_data:
-                return cached_data
-        
-        # Получаем новые данные
+        # Пробуем получить данные из базы
+        db_data = self.db.get_prayer_times(date)
+        if db_data:
+            logger.info("Found data in database:")
+            logger.info(json.dumps(db_data, indent=2))
+            return db_data
+            
+        # Если данных нет в базе, получаем из API
+        logger.info("No data in database, fetching from API")
         api_data = self.api.get_prayer_times(date)
         if api_data:
+            logger.info("Got data from API:")
+            logger.info(json.dumps(api_data, indent=2))
+            # Сохраняем данные в базу
             self.db.save_prayer_times(api_data)
-            return self.db.get_prayer_times(date)
-        
-        # Возвращаем кэш даже если он устарел
-        return self.db.get_prayer_times(date)
+            return api_data
+            
+        logger.error("Failed to get prayer times from both database and API")
+        return None
     
-    def get_prayer_times_range(self, start_date, end_date, force_update=False):
+    def get_prayer_times_range(self, start_date, end_date):
         """
         Получает времена молитв для диапазона дат.
         
         Args:
             start_date (str): Начальная дата в формате YYYY-MM-DD
             end_date (str): Конечная дата в формате YYYY-MM-DD
-            force_update (bool): Принудительное обновление кэша
             
         Returns:
-            dict: Словарь с временами молитв для каждой даты
+            list: Список времен молитв для каждой даты
         """
-        try:
-            # Проверяем формат дат
-            datetime.strptime(start_date, '%Y-%m-%d')
-            datetime.strptime(end_date, '%Y-%m-%d')
+        current = datetime.strptime(start_date, '%Y-%m-%d')
+        end = datetime.strptime(end_date, '%Y-%m-%d')
+        result = []
+        
+        while current <= end:
+            date_str = current.strftime('%Y-%m-%d')
+            prayer_times = self.get_prayer_times(date_str)
+            if prayer_times:
+                result.append(prayer_times)
+            current += timedelta(days=1)
             
-            if not force_update:
-                # Пробуем получить данные из кэша
-                cached_data = self.db.get_prayer_times_range(start_date, end_date)
-                if cached_data and all(self.db.is_cache_valid(date) for date in cached_data.keys()):
-                    return cached_data
-            
-            # Получаем новые данные
-            api_data = self.api.get_prayer_times_range(start_date, end_date)
-            if api_data:
-                for date_data in api_data.values():
-                    self.db.save_prayer_times(date_data)
-                return self.db.get_prayer_times_range(start_date, end_date)
-            
-            # Возвращаем кэш даже если он устарел
-            return self.db.get_prayer_times_range(start_date, end_date)
-            
-        except ValueError as e:
-            logger.error(f"Invalid date format: {e}")
-            return None
+        return result
     
     def get_next_prayer(self):
         """
@@ -451,7 +452,7 @@ class PrayerTimesManager:
         current_time = now.strftime('%H:%M')
         
         # Сортируем молитвы по времени
-        prayers = list(prayer_times['times'].items())
+        prayers = list(prayer_times['data']['timings'].items())
         prayers.sort(key=lambda x: x[1])
         
         # Ищем следующую молитву
@@ -469,7 +470,7 @@ class PrayerTimesManager:
         tomorrow = (now + timedelta(days=1)).strftime('%Y-%m-%d')
         tomorrow_prayers = self.get_prayer_times(tomorrow)
         if tomorrow_prayers:
-            first_prayer = min(tomorrow_prayers['times'].items(), key=lambda x: x[1])
+            first_prayer = min(tomorrow_prayers['data']['timings'].items(), key=lambda x: x[1])
             prayer_time = datetime.strptime(first_prayer[1], '%H:%M').replace(
                 year=now.year, month=now.month, day=now.day + 1
             )
@@ -526,26 +527,10 @@ def format_gregorian_date(date_str, weekday):
 
 def format_hijri_date(date_str):
     """
-    Форматирует дату хиджри в формат '20 Jumādá al-ūlá 1446'
+    Возвращает дату хиджри как есть из API
     Args:
-        date_str: Дата в формате 'DD-MM-YYYY'
+        date_str: Дата из API
     Returns:
-        str: Отформатированная дата
+        str: Дата хиджри без изменений
     """
-    HIJRI_MONTHS = {
-        1: 'Muharram',
-        2: 'Safar',
-        3: 'Rabi al-awwal',
-        4: 'Rabi al-thani',
-        5: 'Jumada al-ula',
-        6: 'Jumada al-akhirah',
-        7: 'Rajab',
-        8: 'Shaban',
-        9: 'Ramadan',
-        10: 'Shawwal',
-        11: 'Dhu al-Qadah',
-        12: 'Dhu al-Hijjah'
-    }
-    
-    day, month, year = map(int, date_str.split('-'))
-    return f"{day} {HIJRI_MONTHS[month]} {year}"
+    return date_str
