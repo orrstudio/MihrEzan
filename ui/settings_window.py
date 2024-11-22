@@ -20,6 +20,8 @@ from kivy.metrics import dp, sp
 from kivy.core.window import Window
 from kivy.clock import Clock
 from data.database import SettingsDatabase
+import logging
+logger = logging.getLogger(__name__)
 
 class ColorButton(Button):
     """Кнопка выбора цвета"""
@@ -112,15 +114,15 @@ class SettingsWindow(ModalView):
     
     # Список доступных цветов
     colors = {
-        'Lime': (0, 1, 0, 1),
-        'Aqua': (0, 1, 1, 1),
-        'Blue': (0, 0, 1, 1),
-        'Red': (1, 0, 0, 1),
-        'Yellow': (1, 1, 0, 1),
-        'Magenta': (1, 0, 1, 1),
-        'Pink': (1, 0.75, 0.8, 1),
-        'Grey': (0.7, 0.7, 0.7, 1),
-        'White': (1, 1, 1, 1)
+        'lime': (0, 1, 0, 1),
+        'aqua': (0, 1, 1, 1),
+        'blue': (0, 0, 1, 1),
+        'red': (1, 0, 0, 1),
+        'yellow': (1, 1, 0, 1),
+        'magenta': (1, 0, 1, 1),
+        'pink': (1, 0.75, 0.8, 1),
+        'grey': (0.7, 0.7, 0.7, 1),
+        'white': (1, 1, 1, 1)
     }
 
     def __init__(self, db, main_window, apply_callback, **kwargs):
@@ -141,6 +143,7 @@ class SettingsWindow(ModalView):
         self.apply_callback = apply_callback
         self.initial_color = self.db.get_setting('color')
         self.selected_color = self.initial_color
+        self.active_button = None  # Инициализируем как None
         
         # Настройка размеров окна
         self.size_hint = (None, None)
@@ -262,7 +265,8 @@ class SettingsWindow(ModalView):
 
     def _add_initial_border(self, dt):
         """Добавляет рамку к изначально активной кнопке."""
-        self._add_border_to_button(self.active_button)
+        if hasattr(self, 'active_button') and self.active_button is not None:
+            self._add_border_to_button(self.active_button)
     
     def _add_border_to_button(self, button):
         """
@@ -271,6 +275,9 @@ class SettingsWindow(ModalView):
         Args:
             button: Кнопка, к которой добавляется рамка
         """
+        if button is None:
+            return
+            
         button.canvas.after.clear()
         with button.canvas.after:
             Color(1, 1, 1, 1)
@@ -283,26 +290,40 @@ class SettingsWindow(ModalView):
         Args:
             button: Нажатая кнопка
         """
-        # Убираем рамку со всех кнопок
-        for child in button.parent.children:
-            child.canvas.after.clear()
-        
-        # Добавляем рамку на выбранную кнопку
-        self._add_border_to_button(button)
-        
-        # Сохраняем выбранный цвет
-        self.selected_color = button.color_name
+        try:
+            # Убираем рамку со старой активной кнопки
+            if hasattr(self, 'active_button') and self.active_button != button:
+                self.active_button.canvas.after.clear()
+            
+            # Добавляем рамку на новую кнопку
+            self._add_border_to_button(button)
+            
+            # Обновляем активную кнопку
+            self.active_button = button
+            
+            # Сохраняем выбранный цвет
+            self.selected_color = button.color_name.lower()
+        except Exception as e:
+            logger.error(f"Error in _on_color_button_press: {e}")
 
     def on_accept(self, *args):
         """Сохраняет настройки при нажатии кнопки Save."""
-        if self.selected_color:
-            self.db.save_setting('color', self.selected_color)
-            if hasattr(self.main_window, 'update_color'):
-                self.main_window.update_color(self.selected_color)
-            if self.apply_callback:
-                # Передаем кортеж цвета вместо названия
-                self.apply_callback(self.colors[self.selected_color])
-        self.dismiss()
+        try:
+            if self.selected_color:
+                # Преобразуем название цвета в нижний регистр
+                color_key = self.selected_color.lower()
+                if color_key in self.colors:
+                    # Сохраняем в базу данных
+                    self.db.save_setting('color', color_key)
+                    # Применяем цвет через callback
+                    if self.apply_callback:
+                        self.apply_callback(self.colors[color_key])
+                else:
+                    logger.warning(f"Unknown color: {self.selected_color}")
+            self.dismiss()
+        except Exception as e:
+            logger.error(f"Error in on_accept: {e}")
+            self.dismiss()
 
     def _update_title_rect(self, instance, value):
         """Обновляет фон заголовка."""
@@ -336,14 +357,14 @@ class SettingsWindow(ModalView):
     def get_color_tuple(color_name):
         """Преобразование названия цвета в RGB"""
         colors = {
-            'Lime': (0, 1, 0, 1),
-            'Aqua': (0, 1, 1, 1),
-            'Blue': (0, 0, 1, 1),
-            'Red': (1, 0, 0, 1),
-            'Yellow': (1, 1, 0, 1),
-            'Magenta': (1, 0, 1, 1),
-            'Pink': (1, 0.75, 0.8, 1),
-            'Grey': (0.7, 0.7, 0.7, 1),
-            'White': (1, 1, 1, 1)
+            'lime': (0, 1, 0, 1),
+            'aqua': (0, 1, 1, 1),
+            'blue': (0, 0, 1, 1),
+            'red': (1, 0, 0, 1),
+            'yellow': (1, 1, 0, 1),
+            'magenta': (1, 0, 1, 1),
+            'pink': (1, 0.75, 0.8, 1),
+            'grey': (0.7, 0.7, 0.7, 1),
+            'white': (1, 1, 1, 1)
         }
         return colors.get(color_name, (0, 1, 0, 1))  # По умолчанию возвращаем Lime
